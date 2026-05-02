@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.log
+*.pcap
+*.cap
+.DS_Store
+Thumbs.db
+
+# Claude Code settings (local only)
+.claude/
+
+# Personal files
+spiritual-profile-*.html
+compatibility-*.html
+degrees-certs-*.html
+work-flourish-*.html

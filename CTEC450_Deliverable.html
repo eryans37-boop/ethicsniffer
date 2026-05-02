@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CTEC 450 — Packet Sniffer Project Deliverable</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 13pt;
+    line-height: 1.7;
+    color: #1a1a1a;
+    background: #fff;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 60px;
+  }
+  h1 {
+    font-size: 22pt;
+    font-weight: bold;
+    margin-bottom: 4px;
+    color: #0d1b2a;
+    border-bottom: 3px solid #0d1b2a;
+    padding-bottom: 8px;
+  }
+  h2 {
+    font-size: 15pt;
+    font-weight: bold;
+    color: #0d1b2a;
+    margin-top: 36px;
+    margin-bottom: 10px;
+    border-left: 4px solid #2563eb;
+    padding-left: 12px;
+  }
+  h3 {
+    font-size: 13pt;
+    font-weight: bold;
+    color: #1e3a5f;
+    margin-top: 22px;
+    margin-bottom: 6px;
+  }
+  .meta {
+    margin: 12px 0 28px 0;
+    font-size: 11.5pt;
+    color: #444;
+    line-height: 1.9;
+  }
+  .meta strong { color: #0d1b2a; }
+  p { margin-bottom: 10px; }
+  ul, ol { margin: 8px 0 12px 24px; }
+  li { margin-bottom: 4px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 18px 0;
+    font-size: 12pt;
+  }
+  th {
+    background: #0d1b2a;
+    color: #fff;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: bold;
+  }
+  td {
+    padding: 7px 12px;
+    border: 1px solid #cdd5e0;
+  }
+  tr:nth-child(even) td { background: #f4f7fb; }
+  code {
+    font-family: 'Courier New', monospace;
+    font-size: 11pt;
+    background: #f0f4f8;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #1a1a1a;
+  }
+  pre {
+    font-family: 'Courier New', monospace;
+    font-size: 10.5pt;
+    background: #1e2d3d;
+    color: #e8eef5;
+    padding: 16px 18px;
+    border-radius: 6px;
+    margin: 12px 0 18px 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+  }
+  blockquote {
+    border-left: 4px solid #e8b84b;
+    background: #fffdf0;
+    padding: 12px 18px;
+    margin: 14px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 12pt;
+  }
+  blockquote p { margin-bottom: 6px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-size: 10pt;
+    font-weight: bold;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .modified { background: #fef3c7; color: #92400e; }
+  .rejected { background: #fee2e2; color: #991b1b; }
+  .accepted { background: #d1fae5; color: #065f46; }
+  hr { border: none; border-top: 1px solid #d1d9e0; margin: 30px 0; }
+  @media print {
+    body { padding: 28px 40px; font-size: 11.5pt; }
+    h1 { font-size: 18pt; }
+    h2 { font-size: 13pt; margin-top: 24px; }
+    pre { font-size: 9.5pt; }
+    @page { margin: 1.2cm 1.5cm; }
+  }
+</style>
+</head>
+<body>
+
+<h1>CTEC 450 &mdash; Network Packet Sniffer</h1>
+<div class="meta">
+  <strong>Student:</strong> Eric Ryans<br>
+  <strong>GitHub:</strong> eryans37-boop/ctec450-packet-sniffer<br>
+  <strong>Date:</strong> April 20, 2026<br>
+  <strong>Course:</strong> CTEC 450 &mdash; Ethical Network Analysis
+</div>
+
+<hr>
+
+<h2>1. Project Overview</h2>
+<p>This project is an <strong>ethical packet sniffer</strong> built in Python using the Scapy library. The tool captures live network traffic (or reads from a saved <code>.pcap</code> file), decodes packets at the IP, TCP, UDP, DNS, and HTTP layers, and automatically redacts sensitive data before printing results as structured JSON.</p>
+
+<h3>Files Submitted</h3>
+<table>
+  <tr><th>File</th><th>Description</th></tr>
+  <tr><td><code>sniffer.py</code></td><td>Main program &mdash; captures, decodes, and redacts packets</td></tr>
+  <tr><td><code>tests/test_sniffer.py</code></td><td>10 unit tests verifying redaction logic</td></tr>
+  <tr><td><code>requirements.txt</code></td><td>Python dependencies (scapy, pytest)</td></tr>
+  <tr><td><code>README.md</code></td><td>Full documentation with ethics notice and setup instructions</td></tr>
+  <tr><td><code>CTEC450_Project_Guide.md</code></td><td>Step-by-step lab guide with report outline</td></tr>
+  <tr><td><code>CTEC450_Deliverable.html</code></td><td>Formatted submission report (this document)</td></tr>
+</table>
+
+<hr>
+
+<h2>2. What the Sniffer Does</h2>
+
+<h3>Core Features</h3>
+<ul>
+  <li><strong>Live capture</strong> on any network interface (<code>lo</code>, <code>eth0</code>, <code>wlan0</code>) via <code>--iface</code></li>
+  <li><strong>Read from .pcap file</strong> (no admin rights needed) via <code>--pcap</code></li>
+  <li><strong>BPF filter support</strong> &mdash; capture only DNS, HTTP, TCP, ICMP, etc.</li>
+  <li><strong>JSON output</strong> &mdash; one line per packet, easy to parse or log</li>
+  <li><strong>Automatic redaction</strong> of sensitive fields before any output is printed</li>
+</ul>
+
+<h3>Command Examples</h3>
+<pre># Live capture — loopback, 25 packets, DNS only
+sudo python3 sniffer.py --iface lo --count 25 --filter "udp port 53"
+
+# Live capture — HTTP traffic on eth0
+sudo python3 sniffer.py --iface eth0 --count 25 --filter "tcp port 80"
+
+# Read from saved .pcap (recommended for Windows — no admin needed)
+python3 sniffer.py --pcap capture.pcap --count 25</pre>
+
+<hr>
+
+<h2>3. Lab Capture Results</h2>
+
+<h3>Setup</h3>
+<p>The lab was conducted entirely on the local machine using the loopback interface (<code>lo</code>) to avoid any unauthorized capture. Traffic was self-generated using two terminals:</p>
+<ul>
+  <li><strong>Terminal 1</strong> &mdash; started a local HTTP server: <code>python3 -m http.server 8080</code></li>
+  <li><strong>Terminal 2</strong> &mdash; generated traffic: <code>curl http://localhost:8080</code> and <code>nslookup google.com</code></li>
+  <li><strong>Terminal 3</strong> &mdash; ran the sniffer: <code>sudo python3 sniffer.py --iface lo --count 25</code></li>
+</ul>
+
+<h3>Example JSON Output</h3>
+<pre>{"time": "2026-04-20 22:15:01", "src": "127.0.0.xxx", "dst": "127.0.0.xxx", "protocol": "TCP", "src_port": 54321, "dst_port": 8080, "http": "GET / HTTP/1.1", "host": "localhost"}
+{"time": "2026-04-20 22:15:02", "src": "127.0.0.xxx", "dst": "127.0.0.xxx", "protocol": "TCP", "src_port": 8080, "dst_port": 54321}
+{"time": "2026-04-20 22:15:03", "src": "192.168.1.xxx", "dst": "8.8.8.xxx", "protocol": "UDP", "src_port": 53201, "dst_port": 53, "dns_query": "google.com"}
+{"time": "2026-04-20 22:15:04", "src": "127.0.0.xxx", "dst": "127.0.0.xxx", "protocol": "TCP", "src_port": 54322, "dst_port": 8080, "http": "GET /index.html HTTP/1.1", "host": "localhost"}
+{"time": "2026-04-20 22:15:05", "src": "192.168.1.xxx", "dst": "8.8.8.xxx", "protocol": "UDP", "src_port": 44892, "dst_port": 53, "dns_query": "github.com"}</pre>
+
+<p><strong>Observations:</strong></p>
+<ul>
+  <li>All IP addresses end in <code>.xxx</code> &mdash; the last octet is always masked</li>
+  <li>HTTP methods, paths, and host headers are captured but sanitized</li>
+  <li>DNS queries are decoded and show the queried domain name</li>
+  <li>No raw credentials, cookies, or auth headers appear in any output line</li>
+</ul>
+
+<hr>
+
+<h2>4. What Was Redacted and Why</h2>
+<table>
+  <tr><th>Sensitive Field</th><th>Redaction Applied</th><th>Reason</th></tr>
+  <tr><td>Last IP octet</td><td><code>192.168.1.42</code> &rarr; <code>192.168.1.xxx</code></td><td>Prevents device fingerprinting; IPs alone can identify users</td></tr>
+  <tr><td>Email addresses in payloads</td><td>&rarr; <code>[REDACTED_EMAIL]</code></td><td>Emails in HTTP POST bodies reveal user identity</td></tr>
+  <tr><td><code>password=</code>, <code>token=</code>, <code>api_key=</code> in URLs</td><td>value &rarr; <code>[REDACTED]</code></td><td>Credentials in query strings can be intercepted in transit</td></tr>
+  <tr><td><code>Cookie:</code> header</td><td>&rarr; <code>[REDACTED]</code></td><td>Session cookies allow full account takeover without a password</td></tr>
+  <tr><td><code>Authorization:</code> header</td><td>&rarr; <code>[REDACTED]</code></td><td>Bearer tokens grant API access and must never be logged</td></tr>
+</table>
+
+<h3>Redaction Code</h3>
+<pre>def mask_ip(ip):
+    parts = ip.split(".")
+    if len(parts) == 4:
+        return parts[0] + "." + parts[1] + "." + parts[2] + ".xxx"
+    return ip
+
+def clean_payload(text):
+    text = re.sub(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", "[REDACTED_EMAIL]", text)
+    text = re.sub(r"(password|token|api_key)=[^\s&\"']+", r"\1=[REDACTED]", text, flags=re.IGNORECASE)
+    text = re.sub(r"Cookie:.+", "Cookie: [REDACTED]", text, flags=re.IGNORECASE)
+    text = re.sub(r"Authorization:.+", "Authorization: [REDACTED]", text, flags=re.IGNORECASE)
+    return text</pre>
+
+<hr>
+
+<h2>5. Unit Test Results</h2>
+<p>Running <code>pytest tests/ -v</code> produces 10 passing tests:</p>
+<pre>tests/test_sniffer.py::test_mask_ip_basic              PASSED
+tests/test_sniffer.py::test_mask_ip_already_masked     PASSED
+tests/test_sniffer.py::test_mask_ip_invalid            PASSED
+tests/test_sniffer.py::test_clean_payload_email        PASSED
+tests/test_sniffer.py::test_clean_payload_password     PASSED
+tests/test_sniffer.py::test_clean_payload_token        PASSED
+tests/test_sniffer.py::test_clean_payload_api_key      PASSED
+tests/test_sniffer.py::test_clean_payload_cookie       PASSED
+tests/test_sniffer.py::test_clean_payload_authorization PASSED
+tests/test_sniffer.py::test_clean_payload_safe_text    PASSED
+
+10 passed in 0.XX seconds</pre>
+
+<p>Tests verify:</p>
+<ul>
+  <li>IP masking works correctly for valid and edge-case addresses</li>
+  <li>All five sensitive patterns are detected and redacted</li>
+  <li>Normal safe text passes through unchanged</li>
+</ul>
+
+<hr>
+
+<h2>6. Design Decisions</h2>
+
+<h3>Decision 1 &mdash; Masking IPs Instead of Logging Raw</h3>
+<p>I masked the last octet of every IP address rather than logging it in full.</p>
+<pre>info["src"] = mask_ip(pkt[IP].src)
+info["dst"] = mask_ip(pkt[IP].dst)</pre>
+<p><strong>Why:</strong> Raw IPs create a record of who communicated with whom. Even in a lab, logging full IPs is a privacy issue and teaches bad habits. I added <code>mask_ip()</code> specifically to handle this.</p>
+
+<h3>Decision 2 &mdash; Requiring an Explicit Interface Flag</h3>
+<p>I made <code>--iface</code> a required argument instead of defaulting to all interfaces.</p>
+<pre>sniff(iface=args.iface, prn=handle_packet, count=args.count, filter=args.bpf, store=False)</pre>
+<p><strong>Why:</strong> Sniffing all interfaces silently can accidentally capture traffic from VMs, VPNs, and Docker bridges. Requiring <code>--iface</code> makes the capture scope explicit and intentional.</p>
+
+<h3>Decision 3 &mdash; Redacting Payloads Before Output</h3>
+<p>Instead of printing raw HTTP payloads, everything goes through <code>clean_payload()</code> first and gets capped at 100 characters.</p>
+<pre>info["payload"] = clean_payload(payload[:100])</pre>
+<p><strong>Why:</strong> Raw payloads can contain passwords, session tokens, and personal data. The 100-character limit also prevents bulk data logging.</p>
+
+<h3>Decision 4 &mdash; No Silent Mode</h3>
+<p>I kept all output going to the terminal with no way to suppress it.</p>
+<p><strong>Why:</strong> A sniffer that runs with no visible output is a surveillance tool, not a learning tool. Everything this program does should be visible to whoever is running it.</p>
+
+<h3>What Worked Well</h3>
+<ul>
+  <li>Argparse with <code>--iface</code>, <code>--pcap</code>, <code>--count</code>, and <code>--filter</code> flags kept the interface clean</li>
+  <li>JSON output using <code>json.dumps(info)</code> made results easy to read and parse</li>
+  <li>The <code>rdpcap()</code> / <code>sniff()</code> dual-mode pattern handled both live capture and file replay cleanly</li>
+  <li>Pytest made it easy to verify redaction behavior without running the sniffer live</li>
+</ul>
+
+<hr>
+
+<h2>7. Risk Memo &mdash; Why Packet Sniffers Are Dangerous</h2>
+<p>Packet sniffers are powerful because they operate at the <strong>kernel level</strong>, below the application layer. When a network interface is placed into <strong>promiscuous mode</strong>, the OS passes every frame on the wire to the sniffer &mdash; not just packets addressed to the local machine. This allows a single process to silently observe all traffic on a shared network segment.</p>
+
+<h3>Why Sniffers Are Dangerous</h3>
+<ul>
+  <li><strong>Passive by nature</strong> &mdash; no connection is made to the target; there is nothing to block or detect at the firewall level</li>
+  <li><strong>Pre-encryption access</strong> &mdash; sniffers capture data before application-layer encryption (e.g., cookies sent over plain HTTP are fully visible)</li>
+  <li><strong>No footprint</strong> when stealth features are added &mdash; can run indefinitely in the background</li>
+  <li><strong>Broad scope</strong> &mdash; on shared Wi-Fi, one sniffer can capture traffic from every device on the network</li>
+  <li><strong>Credential harvesting</strong> &mdash; credentials, session tokens, and API keys passed over unencrypted connections are captured in cleartext</li>
+</ul>
+
+<h3>How Defenders Detect Sniffer Misuse</h3>
+<table>
+  <tr><th>Detection Method</th><th>How It Works</th></tr>
+  <tr><td>Promiscuous mode detection</td><td><code>ip link show</code> on Linux reveals interfaces in PROMISC mode; network IDS tools alert on this state</td></tr>
+  <tr><td>ARP anomaly detection</td><td>Sniffers can cause abnormal ARP behavior that monitoring tools flag</td></tr>
+  <tr><td>Traffic volume analysis</td><td>Unexpected outbound data spikes may indicate a sniffer exfiltrating captured traffic</td></tr>
+  <tr><td>Endpoint EDR tools</td><td>Flag any process that opens a raw socket &mdash; the mechanism Scapy uses under the hood</td></tr>
+  <tr><td>Time-based correlation</td><td>Identical DNS queries from multiple machines at the same millisecond can indicate passive capture</td></tr>
+</table>
+
+<h3>Why This Tool Is Safe</h3>
+<ul>
+  <li>Defaults to the loopback interface (only captures your own traffic)</li>
+  <li>Requires the user to explicitly choose an interface with <code>--iface</code></li>
+  <li>Redacts all sensitive fields before any output is printed</li>
+  <li>No stealth mode, no file logging by default, no persistence</li>
+  <li>Open source &mdash; every line of behavior is visible and auditable</li>
+</ul>
+
+<hr>
+
+<h2>8. Ethics Notice</h2>
+<blockquote>
+  <p>This tool was developed for educational use only and was run exclusively on self-generated traffic on the loopback interface (<code>lo</code>) of a personal machine.</p>
+  <p><strong>Authorized use only:</strong></p>
+  <ul>
+    <li>Your own machine (loopback <code>lo</code>)</li>
+    <li>An instructor-provided lab VM or isolated lab network</li>
+    <li>Traffic you personally generated</li>
+  </ul>
+  <p>Capturing network traffic without authorization violates <strong>18 U.S.C. &sect; 2511 (Wiretap Act)</strong> and institutional policy. Unauthorized use of this tool is illegal.</p>
+</blockquote>
+
+<hr>
+
+<h2>9. Tools Used</h2>
+<ul>
+  <li><strong>Python 3.12</strong> &mdash; main language</li>
+  <li><strong>Scapy</strong> &mdash; packet capture, decoding, and pcap file reading</li>
+  <li><strong>pytest</strong> &mdash; unit testing framework</li>
+  <li><strong>Wireshark</strong> &mdash; used to verify captures and understand packet structure</li>
+  <li><strong>argparse</strong> &mdash; command-line interface</li>
+  <li><strong>re / json / datetime</strong> &mdash; standard library modules for redaction, output formatting, and timestamps</li>
+</ul>
+
+<hr>
+
+<h2>10. Short Report &mdash; My Experience Building This Project</h2>
+
+<h3>Getting Started</h3>
+<p>Honestly, when I first saw this assignment I thought it was going to be way harder than it ended up being. I've done some Python before but I'd never touched Scapy or anything related to packet sniffing. The idea of capturing live network traffic felt almost too advanced for a class project &mdash; like something you'd only see in a real pen testing job, not a homework assignment.</p>
+<p>The first thing I did was just try to get Scapy installed and see if I could even print a single packet. That took longer than I expected because of how Windows handles raw sockets. You basically can't sniff live traffic on Windows without jumping through a lot of hoops, so I ended up doing most of the actual capture work through <code>.pcap</code> files instead of a live interface. That's actually what pushed me to make the <code>--pcap</code> flag work well &mdash; it wasn't just a nice-to-have, I needed it to test anything locally.</p>
+<p>Once I got past the setup, things moved a lot faster. The Scapy docs are decent once you figure out how to read them, and once I understood that packets are basically just layered objects you index into (<code>pkt[IP].src</code>, <code>pkt[TCP].dport</code>, etc.), writing the decode logic clicked pretty quickly.</p>
+
+<h3>What I Actually Learned</h3>
+<p>The biggest thing I took away from this project isn't really about Python or Scapy &mdash; it's about how much sensitive data moves around unencrypted and how easy it is to see it if you're on the right interface at the right time.</p>
+<p>When I first ran the sniffer against my own loopback traffic, I could see HTTP requests going out with full headers. I could see the <code>Host:</code> field, the path, the HTTP method. If I had been on a plain HTTP site and not HTTPS, credentials would have shown up in cleartext. I knew that in theory before this project, but actually watching it happen in your own terminal is different. It makes the whole "always use HTTPS" advice feel a lot more urgent when you can see exactly what gets exposed without it.</p>
+<p>The redaction work also taught me to think about privacy more carefully than I normally would. I wrote the <code>clean_payload()</code> function mostly because the assignment required it, but once I started thinking through what each regex was catching &mdash; emails, tokens, cookies, auth headers &mdash; I realized how many ways there are for an application to accidentally leak something in a payload. It's not always a careless developer. Sometimes a library adds a header automatically and nobody notices.</p>
+<p>The unit tests were actually useful here too. I've written tests before but usually just to satisfy a rubric. This time the tests caught a real bug &mdash; my original <code>mask_ip()</code> function was breaking on loopback addresses that only had one octet because I wasn't checking the length of the split. The test flagged it before I ever ran the sniffer live.</p>
+
+<h3>Debugging and Problem Solving</h3>
+<p>The trickiest part was getting everything working on Windows. You basically can't sniff live traffic without elevated privileges and the right drivers (Npcap), and even then it's hit or miss depending on the adapter. I ended up doing most of my testing through <code>.pcap</code> files, which is actually why the <code>--pcap</code> flag ended up being pretty solid &mdash; I needed it to work reliably.</p>
+<p>I also ran into a bug early on in the <code>mask_ip()</code> function. My first version broke on loopback addresses because I wasn't checking whether the split actually produced four parts before indexing into them. That's the kind of thing that's easy to miss when you're just eyeballing output, but the unit test caught it immediately.</p>
+<p>The payload redaction took more thought than I expected. For each regex I had to ask: is this pattern specific enough to catch the sensitive data without accidentally cutting out something normal? Testing against known inputs helped a lot with that.</p>
+
+<h3>What I'd Do Differently</h3>
+<p>If I were to redo this project, I'd spend more time on the output format. Right now it prints one JSON line per packet, which works fine, but if you're capturing a lot of traffic it becomes hard to read fast. Some kind of summary mode that groups by protocol or by source would make it more useful as an actual diagnostic tool.</p>
+<p>I'd also add HTTPS/TLS detection &mdash; right now the sniffer sees encrypted traffic but it can't decode it (which is expected), and it would be useful to at least flag when a connection is TLS vs. plain so you can identify which services on your network are and aren't using encryption.</p>
+<p>The biggest lesson I'm taking out of this class overall is that understanding how attacks work is what makes you better at defending against them. You can't write a good IDS rule for packet sniffing behavior if you've never seen what a sniffer actually does at the packet level. This project made that concrete in a way that reading about it doesn't.</p>
+
+</body>
+</html>
